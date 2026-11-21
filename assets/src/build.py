@@ -137,12 +137,14 @@ def hero(theme):
         f'<text x="{x0 + 17}" y="{ty + 21.5:.1f}" class="d8" font-size="{ts}" fill="{P["on_red"]}" letter-spacing="1.6">{ROLE}</text></g>'
     )
 
-    # taglines: each one is typed, held, deleted, then the next; the cycle repeats forever
+    # taglines: each one is typed, held, deleted, then the next; the cycle repeats forever.
+    # Plain CSS only (no SMIL, no animated clip paths), so Safari plays it too: every character is its
+    # own <text> that is shown between the moment it is typed and the moment it is deleted.
     st, yt = 14, ty + 58
     cw = MONO_ADV * st
     tx = x0 + 2 * cw
     fonts.use("mono", ">")
-    type_dt, del_dt, hold, gap, begin = 0.045, 0.018, 2.4, 0.35, 1.0
+    type_dt, del_dt, hold, gap, begin = 0.05, 0.02, 2.4, 0.4, 1.0
     slots, t = [], 0.0
     for line in TAGLINES:
         assert tx + len(line) * cw < x0 + col_w, f"tagline too long: {line}"
@@ -150,36 +152,30 @@ def hero(theme):
         slots.append((line, t))
         t += len(line) * type_dt + hold + len(line) * del_dt + gap
     cycle = t
-    events = []  # (time, visible chars) for every step of every line
-
-    def steps(line, t0):
-        n, out = len(line), [(t0, 0)]
-        out += [(t0 + (k + 1) * type_dt, k + 1) for k in range(n)]
-        t1 = t0 + n * type_dt + hold
-        out += [(t1 + (k + 1) * del_dt, n - k - 1) for k in range(n)]
-        return out
-
-    def anim(attr, frames, fmt):
-        frames = sorted(frames)
-        if frames[0][0] > 0:
-            frames = [(0.0, frames[0][1] if False else 0)] + frames
-        kt = ";".join(f"{min(f[0] / cycle, 1):.5f}" for f in frames)
-        vals = ";".join(fmt(f[1]) for f in frames)
-        return (f'<animate attributeName="{attr}" begin="{begin}s" dur="{cycle:.3f}s" repeatCount="indefinite" '
-                f'calcMode="discrete" keyTimes="{kt}" values="{vals}"/>')
-
-    body_t = [f'<text x="{x0}" y="{yt:.1f}" class="mono" font-size="{st}" fill="{P["red"]}">&gt;</text>']
+    q = lambda v: f"{v / cycle * 100:.3f}%"
+    chars, cursor = [], [(0.0, 0)]
     for li, (line, t0) in enumerate(slots):
-        fr = steps(line, t0)
-        events += fr
-        defs.append(f'<clipPath id="tag{li}"><rect x="{tx:.1f}" y="{yt - st:.1f}" width="0" height="{st * 1.5:.1f}">'
-                    + anim("width", fr, lambda c: f"{c * cw:.1f}") + '</rect></clipPath>')
-        body_t.append(f'<text x="{tx:.1f}" y="{yt:.1f}" class="mono" font-size="{st}" fill="{P["ink2"]}" '
-                      f'clip-path="url(#tag{li})">{escape(line)}</text>')
-    body_t.append(f'<rect x="{tx:.1f}" y="{yt - st * 0.8:.1f}" width="{cw * 0.62:.1f}" height="{st:.1f}" fill="{P["red"]}" class="cur">'
-                  + anim("x", events, lambda c: f"{tx + c * cw:.1f}") + '</rect>')
-    body.append(f'<g class="{intro("fade", .8)}">{"".join(body_t)}</g>')
-    css.append(".cur{animation:blink 1s steps(1) infinite}")
+        n = len(line)
+        t_del = t0 + n * type_dt + hold
+        for k, ch in enumerate(line):
+            on, off = t0 + (k + 1) * type_dt, t_del + (n - k) * del_dt
+            cursor += [(on, k + 1), (t_del + (n - k) * del_dt, k)]
+            if ch == " ":
+                continue
+            c = f"k{li}_{k}"
+            css.append(f"@keyframes {c}{{0%{{opacity:0}}{q(on)}{{opacity:1}}{q(off)}{{opacity:0}}100%{{opacity:0}}}}"
+                       f".{c}{{opacity:0;animation:{c} {cycle:.2f}s step-end {begin}s infinite}}")
+            chars.append(f'<text x="{tx + k * cw:.1f}" class="{c}{" l0" if li == 0 else ""}">{escape(ch)}</text>')
+    cursor.sort()
+    frames = "".join(f"{q(tt)}{{transform:translateX({c * cw:.1f}px)}}" for tt, c in cursor)
+    css.append(f"@keyframes cmv{{{frames}100%{{transform:translateX(0)}}}}"
+               f".cmv{{animation:cmv {cycle:.2f}s step-end {begin}s infinite}}")
+    body.append(f'<g class="{intro("fade", .8)}">'
+                f'<text x="{x0}" y="{yt:.1f}" class="mono" font-size="{st}" fill="{P["red"]}">&gt;</text>'
+                f'<g class="mono" font-size="{st}" fill="{P["ink2"]}" transform="translate(0 {yt:.1f})">{"".join(chars)}</g>'
+                f'<g class="cmv"><rect x="{tx:.1f}" y="{yt - st * 0.8:.1f}" width="{cw * 0.62:.1f}" height="{st:.1f}" '
+                f'fill="{P["red"]}" class="cur"/></g></g>')
+    css.append(".cur{animation:blink 1s steps(1) infinite}@media (prefers-reduced-motion:reduce){.l0{opacity:1!important}}")
 
     # three numbers
     sy = yt + 64
