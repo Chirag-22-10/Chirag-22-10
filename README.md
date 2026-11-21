@@ -1,6 +1,6 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
-  <img src="assets/hero-light.svg" width="100%" alt="Chirag Kumar, Android engineer: Android, Kotlin, on-device ML. A tagline types out and changes every few seconds: field apps that work offline and never lose a reading; ML models on the phone, the API as a backup; Kotlin and Compose from the camera to the server; talking to smart meters over Bluetooth; write it once with Kotlin Multiplatform. 6 Android apps built at Sujanix; 11 ONNX models running on-device; 124 commits to TrueRead from August to November 2026. A terminal prints whoami.json: base Bengaluru, India; now TrueRead field apps at Sujanix; stack kotlin, compose, onnx; rules: offline room outbox, models aes-gcm and sha-256, fallback local to api; open to Android roles.">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg?v=2">
+  <img src="assets/hero-light.svg?v=2" width="100%" alt="Chirag Kumar, Android engineer: Android, Kotlin, on-device ML. A tagline types out and changes every few seconds: field apps that work offline and never lose a reading; ML models on the phone, the API as a backup; Kotlin and Compose from the camera to the server; talking to smart meters over Bluetooth; write it once with Kotlin Multiplatform. 6 Android apps built at Sujanix; 11 ONNX models running on-device; 124 commits to TrueRead from August to November 2026. A terminal prints whoami.json: base Bengaluru, India; now TrueRead field apps at Sujanix; stack kotlin, compose, onnx; rules: offline room outbox, models aes-gcm and sha-256, fallback local to api; open to Android roles.">
 </picture>
 
 <p>
